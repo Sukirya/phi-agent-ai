@@ -1,0 +1,17 @@
+* text=auto
+
+# Scripts must stay runnable on Unix CI runners.
+gradlew text eol=lf
+src-tauri/gen/android/gradlew text eol=lf
+*.sh text eol=lf
+
+# Windows scripts keep native line endings.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets.
+*.png binary
+*.ico binary
+*.icns binary
+*.jar binary
+*.blob binary

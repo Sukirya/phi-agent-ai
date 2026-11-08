@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a feature or architectural improvement
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the use case and the current pain point.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and trade-offs
+    validations:
+      required: false
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Design check
+      options:
+        - label: I have read the architecture principles and believe this proposal does not violate core constraints such as removability
+          required: true

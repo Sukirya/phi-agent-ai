@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-label="phi-agent — your agent, your machine, your rules">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0c11"/>
+      <stop offset="0.45" stop-color="#111725"/>
+      <stop offset="1" stop-color="#0a0c11"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.16" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#6ea8fe" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#6ea8fe" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.86" cy="0.18" r="0.55">
+      <stop offset="0" stop-color="#8b5cf6" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b7d8ff"/>
+      <stop offset="1" stop-color="#6ea8fe"/>
+    </linearGradient>
+    <linearGradient id="wordmark" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c9d7ee"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+    <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="360" fill="url(#bg)"/>
+  <rect width="1200" height="360" fill="url(#grid)"/>
+  <rect width="1200" height="360" fill="url(#glowA)"/>
+  <rect width="1200" height="360" fill="url(#glowB)"/>
+  <path d="M0 316 C 220 268, 372 366, 620 318 S 998 258, 1200 298" fill="none" stroke="#6ea8fe" stroke-opacity="0.18" stroke-width="1.5"/>
+  <path d="M0 330 C 240 288, 400 372, 660 328 S 1010 276, 1200 312" fill="none" stroke="#8b5cf6" stroke-opacity="0.10" stroke-width="1"/>
+
+  <g transform="translate(96,76)">
+    <rect x="0" y="0" width="208" height="208" rx="48" fill="#0d1220" stroke="url(#accent)" stroke-width="2"/>
+    <rect x="10" y="10" width="188" height="188" rx="40" fill="#6ea8fe" fill-opacity="0.06"/>
+    <text x="104" y="151" text-anchor="middle" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="132" font-weight="600" fill="url(#accent)" filter="url(#softGlow)">φ</text>
+  </g>
+
+  <text x="360" y="151" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="86" font-weight="700" letter-spacing="-2" fill="url(#wordmark)">phi-agent</text>
+  <text x="364" y="201" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="26" fill="#9aa7bd">Your agent. Your machine. Your rules.</text>
+
+  <g font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" font-weight="600" letter-spacing="1.4">
+    <g transform="translate(364,238)">
+      <rect width="152" height="34" rx="17" fill="#6ea8fe" fill-opacity="0.10" stroke="#6ea8fe" stroke-opacity="0.45"/>
+      <text x="76" y="22" text-anchor="middle" fill="#9ecbff">LOCAL-FIRST</text>
+    </g>
+    <g transform="translate(530,238)">
+      <rect width="170" height="34" rx="17" fill="#8b5cf6" fill-opacity="0.10" stroke="#8b5cf6" stroke-opacity="0.45"/>
+      <text x="85" y="22" text-anchor="middle" fill="#c4b5fd">MULTI-DEVICE</text>
+    </g>
+    <g transform="translate(714,238)">
+      <rect width="172" height="34" rx="17" fill="#7ee787" fill-opacity="0.08" stroke="#7ee787" stroke-opacity="0.40"/>
+      <text x="86" y="22" text-anchor="middle" fill="#9be8a3">PLUGIN-NATIVE</text>
+    </g>
+  </g>
+
+  <text x="1104" y="322" text-anchor="end" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="18" fill="#67718a">v0.1 · desktop</text>
+</svg>

@@ -1,0 +1,52 @@
+[package]
+name = "phi-agent"
+version = "0.1.0"
+description = "phi-agent: local-first, multi-device agent client"
+authors = ["phi-agent contributors"]
+license = "GPL-3.0-only"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "phi_agent_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+sha2 = "0.11"
+hex = "0.4"
+async-trait = "0.1"
+tokio = { version = "1", features = ["sync", "time", "process", "macros", "rt-multi-thread", "io-util"] }
+tokio-util = "0.7"
+
+# Android has no OpenSSL in the NDK, so cross-compilation uses rustls there.
+# Desktop keeps native-tls (Schannel on Windows, system TLS elsewhere).
+[target.'cfg(target_os = "android")'.dependencies]
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls"] }
+
+[profile.dev]
+# Debug builds become noticeably more responsive at a small compile-time cost.
+opt-level = 1
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
+debug = false

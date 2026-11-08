@@ -1,0 +1,35 @@
+# ─────────────────────────────────────────────────────────────
+# Whitelist mode: ignore everything by default and opt in only the
+# files that belong in version control. When adding a new top-level
+# file or directory, add a matching ! rule here.
+# ─────────────────────────────────────────────────────────────
+/*
+
+# Repository metadata
+!/.gitignore
+!/.gitattributes
+!/.github/
+!/.github/**
+!/LICENSE
+!/README.md
+!/README.zh-CN.md
+!/CONTRIBUTING.md
+!/SECURITY.md
+!/assets/
+!/assets/**
+
+# Frontend
+!/package.json
+!/bun.lock
+!/index.html
+!/tsconfig.json
+!/tsconfig.node.json
+!/vite.config.ts
+!/src/
+!/src/**
+!/public/
+!/public/**
+
+# Desktop core
+!/src-tauri/
+!/src-tauri/**

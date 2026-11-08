@@ -1,0 +1,25 @@
+{
+  "name": "phi-agent",
+  "version": "0.1.0",
+  "description": "Local-first, multi-device agent client",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "tauri": "tauri"
+  },
+  "license": "GPL-3.0-only",
+  "dependencies": {
+    "solid-js": "^1",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-opener": "^2"
+  },
+  "devDependencies": {
+    "typescript": "^7",
+    "vite": "^8",
+    "vite-plugin-solid": "^2",
+    "@tauri-apps/cli": "^2"
+  }
+}
