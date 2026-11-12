@@ -1,7 +1,10 @@
 import { For, Show, createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { OpenUIBlock } from "./OpenUIBlock";
+import { lang, setLang, t, tArgs } from "./i18n";
 import "./App.css";
+import "@openuidev/browser-bundle/styles.css";
 
 type ModelStatus = { provider: string; model: string; configured: boolean };
 type SessionSummary = {
@@ -33,6 +36,7 @@ type Run = {
   costUsd: number;
   maxCostUsd: number;
   maxWallSecs: number;
+  uiMode: boolean;
   inputTokens: number;
   outputTokens: number;
   pendingApprovalId: string | null;
@@ -63,6 +67,13 @@ type PendingApproval = {
   expiresAt: string;
 };
 type SessionDetail = { session: SessionView; pendingApprovals: PendingApproval[] };
+type SendResult = { runId: string };
+type ModelStreamEvent = {
+  runId: string;
+  callId: string;
+  kind: string;
+  text?: string;
+};
 type Bootstrap = {
   nodeId: string;
   mode: string;
@@ -74,10 +85,28 @@ type Bootstrap = {
   maxSteps: number;
   maxCostUsd: number;
   maxWallSecs: number;
+  language: string;
 };
 
 function errorText(error: unknown): string {
   return typeof error === "string" ? error : String(error);
+}
+
+const STATE_LABELS: Record<string, string> = {
+  Scheduled: "Scheduled",
+  Running: "Running",
+  WaitingApproval: "Waiting for approval",
+  Succeeded: "Succeeded",
+  Failed: "Failed",
+  Aborted: "Aborted",
+  AwaitingReconciliation: "Needs review",
+  Normal: "Normal",
+  Degraded: "Degraded",
+  Maintenance: "Maintenance",
+};
+
+function stateLabel(state: string): string {
+  return t(STATE_LABELS[state] ?? state);
 }
 
 function BlockView(props: { block: Block }) {
@@ -87,14 +116,16 @@ function BlockView(props: { block: Block }) {
     case "tool_use":
       return (
         <details class="tool">
-          <summary>🔧 调用 {props.block.name}</summary>
+          <summary>{tArgs("🔧 Call {name}", { name: props.block.name })}</summary>
           <pre>{JSON.stringify(props.block.input, null, 2)}</pre>
         </details>
       );
     case "tool_result":
       return (
         <details classList={{ tool: true, error: props.block.is_error }}>
-          <summary>{props.block.is_error ? "✗ 工具结果" : "✓ 工具结果"}</summary>
+          <summary>
+            {props.block.is_error ? t("✗ Tool result") : t("✓ Tool result")}
+          </summary>
           <pre>{props.block.content}</pre>
         </details>
       );
@@ -108,12 +139,16 @@ function App() {
   const [input, setInput] = createSignal("");
   const [workspaceInput, setWorkspaceInput] = createSignal("");
   const [apiKey, setApiKey] = createSignal("");
+  const [uiMode, setUiMode] = createSignal(false);
   const [error, setError] = createSignal("");
+  const [streamText, setStreamText] = createSignal("");
+  const [streamRunId, setStreamRunId] = createSignal<string | null>(null);
   let transcriptRef: HTMLElement | undefined;
   let refreshTimer: number | undefined;
 
   async function refresh() {
     const bootstrap = await invoke<Bootstrap>("get_bootstrap");
+    setLang(bootstrap.language);
     setBoot(bootstrap);
     if (!workspaceInput() && bootstrap.workspace) {
       setWorkspaceInput(bootstrap.workspace);
@@ -135,18 +170,53 @@ function App() {
 
   onMount(() => {
     refresh().catch((e) => setError(errorText(e)));
-    let unlisten: (() => void) | undefined;
-    listen("phi://event", () => scheduleRefresh()).then((fn) => {
-      unlisten = fn;
+    let unlistenEvent: (() => void) | undefined;
+    let unlistenStream: (() => void) | undefined;
+    listen<{ payload?: { type?: string } }>("phi://event", (event) => {
+      const type = event.payload?.payload?.type;
+      if (
+        type === "RunSucceeded" ||
+        type === "RunFailed" ||
+        type === "RunAborted"
+      ) {
+        setStreamText("");
+        setStreamRunId(null);
+      }
+      scheduleRefresh();
+    }).then((fn) => {
+      unlistenEvent = fn;
     });
-    onCleanup(() => unlisten?.());
+    listen<ModelStreamEvent>("phi://model-stream", (event) => {
+      const payload = event.payload;
+      if (payload.kind === "text") {
+        const runId = streamRunId();
+        if (runId && payload.runId !== runId) return;
+        if (!runId) setStreamRunId(payload.runId);
+        setStreamText((current) => current + (payload.text ?? ""));
+      } else if (payload.kind === "done") {
+        const runId = streamRunId();
+        if (runId && payload.runId !== runId) return;
+        window.setTimeout(() => {
+          setStreamText("");
+          setStreamRunId(null);
+        }, 250);
+      }
+    }).then((fn) => {
+      unlistenStream = fn;
+    });
+    onCleanup(() => {
+      unlistenEvent?.();
+      unlistenStream?.();
+    });
   });
 
   createEffect(() => {
     const messages = detail()?.session.messages.length ?? 0;
     const approvals = detail()?.pendingApprovals.length ?? 0;
+    const streaming = streamText().length;
     void messages;
     void approvals;
+    void streaming;
     if (transcriptRef) {
       queueMicrotask(() => {
         if (transcriptRef) transcriptRef.scrollTop = transcriptRef.scrollHeight;
@@ -160,8 +230,15 @@ function App() {
     if (!text || !id) return;
     setError("");
     setInput("");
+    setStreamText("");
+    setStreamRunId(null);
     try {
-      await invoke("send_message", { sessionId: id, text });
+      const result = await invoke<SendResult>("send_message", {
+        sessionId: id,
+        text,
+        ui: uiMode(),
+      });
+      setStreamRunId(result.runId);
     } catch (e) {
       setError(errorText(e));
       setInput(text);
@@ -191,6 +268,8 @@ function App() {
 
   async function newSession() {
     setError("");
+    setStreamText("");
+    setStreamRunId(null);
     try {
       const summary = await invoke<SessionSummary>("create_session", { title: null });
       setCurrentId(summary.id);
@@ -202,6 +281,8 @@ function App() {
   }
 
   async function selectSession(id: string) {
+    setStreamText("");
+    setStreamRunId(null);
     setCurrentId(id);
     try {
       setDetail(await invoke<SessionDetail>("get_session", { sessionId: id }));
@@ -242,13 +323,22 @@ function App() {
     return state === "Scheduled" || state === "Running" || state === "WaitingApproval";
   };
   const modeOk = () => boot()?.mode === "Normal";
+  const uiRun = (message: Message) =>
+    detail()?.session.runs.find(
+      (run) => run.turnId === message.turnId && run.uiMode,
+    ) ?? null;
+  const assistantText = (message: Message) =>
+    message.blocks
+      .filter((block): block is Extract<Block, { type: "text" }> => block.type === "text")
+      .map((block) => block.text)
+      .join("\n");
 
   return (
     <div class="app">
       <aside class="sidebar">
         <div class="brand">phi-agent</div>
         <button class="new-chat" onClick={newSession}>
-          + 新会话
+          {t("+ New session")}
         </button>
         <div class="session-list">
           <For each={boot()?.sessions ?? []}>
@@ -259,7 +349,12 @@ function App() {
               >
                 <span class="session-title">{session.title}</span>
                 <span class="session-meta">
-                  {new Date(session.updatedAt).toLocaleString()} · {session.messageCount} 条
+                  {tArgs("{date} · {count} messages", {
+                    date: new Date(session.updatedAt).toLocaleString(
+                      lang() === "zh-CN" ? "zh-CN" : "en-US",
+                    ),
+                    count: session.messageCount,
+                  })}
                 </span>
               </button>
             )}
@@ -269,8 +364,8 @@ function App() {
           <Show when={boot()}>
             {(b) => (
               <>
-                <div>节点 {b().nodeId.slice(0, 14)}…</div>
-                <div>模式 {b().mode}</div>
+                <div>{tArgs("Node {id}…", { id: b().nodeId.slice(0, 14) })}</div>
+                <div>{tArgs("Mode {mode}", { mode: stateLabel(b().mode) })}</div>
               </>
             )}
           </Show>
@@ -280,13 +375,13 @@ function App() {
       <main class="main">
         <header class="topbar">
           <div class="workspace">
-            <label>工作区</label>
+            <label>{t("Workspace")}</label>
             <input
               value={workspaceInput()}
               onInput={(e) => setWorkspaceInput(e.currentTarget.value)}
-              placeholder="工作区绝对路径"
+              placeholder={t("Absolute workspace path")}
             />
-            <button onClick={saveWorkspace}>保存</button>
+            <button onClick={saveWorkspace}>{t("Save")}</button>
           </div>
           <div class="model">
             <Show
@@ -297,21 +392,21 @@ function App() {
                     type="password"
                     value={apiKey()}
                     onInput={(e) => setApiKey(e.currentTarget.value)}
-                    placeholder="ANTHROPIC_API_KEY（仅保存在内存）"
+                    placeholder={t("ANTHROPIC_API_KEY (stored locally on this device)")}
                   />
-                  <button onClick={saveApiKey}>设置</button>
+                  <button onClick={saveApiKey}>{t("Set")}</button>
                 </div>
               }
             >
               <span class="badge ok">{boot()?.model.provider} / {boot()?.model.model}</span>
             </Show>
-            <span classList={{ badge: true, bad: !modeOk() }}>{boot()?.mode}</span>
+            <span classList={{ badge: true, bad: !modeOk() }}>{stateLabel(boot()?.mode ?? "")}</span>
           </div>
         </header>
 
         <Show when={!modeOk()}>
           <div class="banner error">
-            {boot()?.modeReason || "节点未处于正常模式，发送消息已被禁用"}
+            {boot()?.modeReason || t("The node is not in normal mode; sending is disabled")}
           </div>
         </Show>
         <Show when={error()}>
@@ -319,16 +414,20 @@ function App() {
         </Show>
 
         <section class="transcript" ref={(el) => (transcriptRef = el)}>
-          <Show when={detail()} fallback={<div class="empty">加载中…</div>}>
+          <Show when={detail()} fallback={<div class="empty">{t("Loading…")}</div>}>
             {(d) => (
               <>
                 <Show when={d().session.messages.length === 0}>
                   <div class="empty">
-                    <p>向编码 Agent 描述一个任务，例如：</p>
-                    <p class="hint">“先看看这个仓库的结构，然后修掉那个失败的测试。”</p>
+                    <p>{t("Describe a task for the coding agent, for example:")}</p>
+                    <p class="hint">
+                      {t("“Look at the repository structure, then fix the failing test.”")}
+                    </p>
                     <Show when={!boot()?.model.configured}>
                       <p class="hint">
-                        当前没有配置模型密钥，运行会使用 Mock 模型（只演示工具回路）。可以在右上角设置密钥。
+                        {t(
+                          "No model key is configured, so runs use the mock model (it demonstrates the tool loop). Set a key in the top right.",
+                        )}
                       </p>
                     </Show>
                   </div>
@@ -336,27 +435,60 @@ function App() {
                 <For each={d().session.messages}>
                   {(message) => (
                     <div class={`msg ${message.role}`}>
-                      <div class="msg-role">{message.role === "user" ? "你" : "Agent"}</div>
+                      <div class="msg-role">
+                        {message.role === "user" ? t("You") : t("Agent")}
+                      </div>
                       <div class="msg-body">
-                        <For each={message.blocks}>{(block) => <BlockView block={block} />}</For>
+                        <Show
+                          when={message.role === "assistant" ? uiRun(message) : null}
+                          fallback={
+                            <For each={message.blocks}>
+                              {(block) => <BlockView block={block} />}
+                            </For>
+                          }
+                        >
+                          <OpenUIBlock code={assistantText(message)} />
+                        </Show>
                       </div>
                     </div>
                   )}
                 </For>
 
+                <Show when={streamText()}>
+                  <div class="msg assistant streaming">
+                    <div class="msg-role">{t("Agent")}</div>
+                    <div class="msg-body">
+                      <div class="text">{streamText()}</div>
+                    </div>
+                  </div>
+                </Show>
+
                 <For each={d().pendingApprovals}>
                   {(approval) => (
                     <div class="approval">
-                      <div class="approval-title">⚠ 需要审批：{approval.toolId}</div>
-                      <div class="approval-risk">风险：{approval.risk}</div>
+                      <div class="approval-title">
+                        {tArgs("⚠ Approval required: {tool}", {
+                          tool: approval.toolId,
+                        })}
+                      </div>
+                      <div class="approval-risk">
+                        {tArgs("Risk: {risk}", { risk: approval.risk })}
+                      </div>
                       <pre>{JSON.stringify(approval.argsPreview, null, 2)}</pre>
                       <div class="approval-actions">
                         <button class="primary" onClick={() => resolveApproval(approval.id, true)}>
-                          批准
+                          {t("Approve")}
                         </button>
-                        <button onClick={() => resolveApproval(approval.id, false)}>拒绝</button>
+                        <button onClick={() => resolveApproval(approval.id, false)}>
+                          {t("Reject")}
+                        </button>
                       </div>
-                      <div class="approval-foot">动作摘要 {approval.actionDigest.slice(0, 16)}… · 到期 {approval.expiresAt}</div>
+                      <div class="approval-foot">
+                        {tArgs("Action digest {digest}… · expires {expires}", {
+                          digest: approval.actionDigest.slice(0, 16),
+                          expires: approval.expiresAt,
+                        })}
+                      </div>
                     </div>
                   )}
                 </For>
@@ -368,9 +500,12 @@ function App() {
         <Show when={currentRun()}>
           {(run) => (
             <div class="runbar">
-              <span classList={{ state: true, active: isRunning() }}>{run().state}</span>
+              <span classList={{ state: true, active: isRunning() }}>{stateLabel(run().state)}</span>
               <span>
-                步数 {run().steps}/{run().maxSteps}
+                {tArgs("Steps {steps}/{max}", {
+                  steps: run().steps,
+                  max: run().maxSteps,
+                })}
               </span>
               <span>
                 ${run().costUsd.toFixed(4)} / ${run().maxCostUsd.toFixed(2)}
@@ -380,7 +515,7 @@ function App() {
               </span>
               <Show when={isRunning()}>
                 <button class="danger" onClick={() => cancelRun(run().id)}>
-                  取消
+                  {t("Cancel")}
                 </button>
               </Show>
             </div>
@@ -406,14 +541,27 @@ function App() {
                 send();
               }
             }}
-            placeholder="输入任务…（Enter 发送，Shift+Enter 换行）"
+            placeholder={t("Describe a task… (Enter to send, Shift+Enter for a newline)")}
             disabled={!modeOk() || isRunning()}
             rows={3}
           />
           <div class="composer-actions">
-            <span class="hint">预算：{boot()?.maxSteps ?? 20} 步 / ${boot()?.maxCostUsd ?? 0.5}</span>
+            <label class="ui-toggle" title={t("UI mode: the model answers with an interactive OpenUI interface.")}>
+              <input
+                type="checkbox"
+                checked={uiMode()}
+                onChange={(e) => setUiMode(e.currentTarget.checked)}
+              />
+              {t("Intelligent UI")}
+            </label>
+            <span class="hint">
+              {tArgs("Budget: {steps} steps / ${cost}", {
+                steps: boot()?.maxSteps ?? 20,
+                cost: boot()?.maxCostUsd ?? 0.5,
+              })}
+            </span>
             <button class="primary" onClick={send} disabled={!modeOk() || isRunning() || !input().trim()}>
-              发送
+              {t("Send")}
             </button>
           </div>
         </footer>

@@ -8,6 +8,8 @@
 # Repository metadata
 !/.gitignore
 !/.gitattributes
+!/AGENT.md
+!/CLAUDE.md
 !/.github/
 !/.github/**
 !/LICENSE
@@ -17,6 +19,8 @@
 !/SECURITY.md
 !/assets/
 !/assets/**
+!/docs/
+!/docs/**
 
 # Frontend
 !/package.json
@@ -25,6 +29,8 @@
 !/tsconfig.json
 !/tsconfig.node.json
 !/vite.config.ts
+!/scripts/
+!/scripts/**
 !/src/
 !/src/**
 !/public/

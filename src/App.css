@@ -394,3 +394,57 @@ textarea:focus {
 .composer-actions .primary {
   padding: 6px 16px;
 }
+
+/* Intelligent UI (OpenUI) island */
+.openui-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.openui {
+  min-width: 0;
+  width: 100%;
+}
+
+.openui-error {
+  color: var(--danger, #c0392b);
+  font-size: 12px;
+}
+
+.openui-fallback {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--bg, #111);
+  color: var(--text, #eee);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.ui-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.msg.streaming .text::after {
+  content: "▍";
+  margin-left: 2px;
+  opacity: 0.6;
+  animation: phi-cursor 1s steps(2, start) infinite;
+}
+
+@keyframes phi-cursor {
+  to {
+    visibility: hidden;
+  }
+}

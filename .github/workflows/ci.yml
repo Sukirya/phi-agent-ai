@@ -7,9 +7,6 @@ on:
     tags: ["v*"]
   pull_request:
 
-permissions:
-  contents: write
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
@@ -19,6 +16,22 @@ env:
   GH_REPO: ${{ github.repository }}
 
 jobs:
+  fmt:
+    name: Rust (format)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
   frontend:
     name: Frontend (typecheck + build)
     runs-on: ubuntu-latest
@@ -55,12 +68,41 @@ jobs:
           workspaces: src-tauri
 
       - name: Run tests
-        run: cargo test --all-targets
+        run: cargo test --workspace --all-targets
+
+  headless:
+    name: Headless (no desktop features)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install native TLS headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libssl-dev
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: headless
+
+      - name: Unit tests without the desktop shell
+        run: cargo test --workspace --exclude phi-agent
+
+      - name: Headless binary smoke tests
+        run: cargo test -p phi-headless --test headless
 
   prepare:
     name: Prepare release
-    needs: [frontend, rust]
+    needs: [fmt, frontend, rust, headless]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
     steps:
@@ -84,6 +126,8 @@ jobs:
     name: Release desktop (${{ matrix.platform }})
     needs: [prepare]
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -170,6 +214,8 @@ jobs:
     name: Release Android (AAB + split APKs)
     needs: [prepare]
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -278,6 +324,8 @@ jobs:
     needs: [prepare, release-desktop, release-android]
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Publish draft
         env:
