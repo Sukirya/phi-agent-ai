@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use serde_json::Value;
-
 use phi_contracts::SLOT_POLICY_EVALUATE;
 use phi_contracts::ports::{PolicyDecision, PolicyEffect, PolicyInput, PolicyPort, SandboxPort};
 use phi_i18n as i18n;
@@ -134,6 +132,7 @@ impl PolicyPort for DefaultPolicyPlugin {
 mod tests {
     use super::*;
     use crate::sandbox::FsSandboxPlugin;
+    use serde_json::Value;
     use serde_json::json;
     use std::path::PathBuf;
 

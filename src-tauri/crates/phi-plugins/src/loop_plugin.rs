@@ -212,7 +212,7 @@ struct RunContext {
 
 /// Generated from the built-in OpenUI chat library. Regenerate with
 /// `bun run generate:openui` after upgrading the OpenUI packages.
-const OPENUI_SYSTEM_PROMPT: &str = include_str!("../../assets/openui-chat-system-prompt.txt");
+const OPENUI_SYSTEM_PROMPT: &str = include_str!("../../../assets/openui-chat-system-prompt.txt");
 
 enum RunOutcome {
     Succeeded,
@@ -1077,8 +1077,8 @@ async fn execute_tool(
 
     if Instant::now() >= ctx.deadline {
         let error = i18n::t("Wall-clock limit exceeded; action was not executed.");
-        publish_tool_failed(ctx, &call, error);
-        return tool_not_executed(&call, error);
+        publish_tool_failed(ctx, &call, &error);
+        return tool_not_executed(&call, &error);
     }
 
     // The start record must be durable before the side effect begins.
@@ -1272,7 +1272,7 @@ fn deny_result(call: &ToolCall, rationale: &str) -> ToolExecOutcome {
     }
 }
 
-fn aborted(ctx: &RunContext, reason: &str, stop: &str) -> RunOutcome {
+fn aborted(_ctx: &RunContext, reason: &str, stop: &str) -> RunOutcome {
     RunOutcome::Aborted {
         reason: reason.to_string(),
         stop: stop.to_string(),
