@@ -18,10 +18,7 @@ use phi_adapters::fs_blob::FsBlobStore;
 use phi_adapters::fs_journal::JsonlJournal;
 use phi_adapters::lock::DataDirLock;
 use phi_adapters::system::{StderrLog, SystemClock, UuidIds};
-use phi_contracts::ports::{
-    ApproverPort, ModelPort, ModelStatus, RunLimits, RunStatus, RuntimePort, SessionPort,
-    StartRunRequest,
-};
+use phi_contracts::ports::{ModelStatus, RunLimits, RunStatus, SessionPort, StartRunRequest};
 use phi_contracts::provider::{ProviderInput, ProviderTestView, ProviderView};
 use phi_contracts::services::Services;
 use phi_contracts::stream::{StreamHub, StreamPort};
@@ -31,6 +28,7 @@ use phi_domain::view::{PendingApprovalView, SessionSummary, SessionView};
 use phi_i18n as i18n;
 use phi_kernel::event_bus::{EventBus, EventSink};
 use phi_kernel::lifecycle::{Kernel, RunMode};
+use phi_kernel::ports::LogPort;
 use phi_kernel::registry::Registry;
 use phi_plugins::approver::HumanApprover;
 use phi_plugins::context::DefaultContextPlugin;
@@ -197,7 +195,6 @@ pub fn compose(config: NodeConfig) -> Result<Arc<Node>, String> {
     let session = Arc::new(SessionPlugin::new(
         bus.clone(),
         ids.clone(),
-        clock.clone(),
         blob.clone(),
         node_id.clone(),
     ));
@@ -429,7 +426,7 @@ impl Node {
     pub fn bootstrap(&self) -> Result<Bootstrap, String> {
         let mut sessions = self.list_sessions();
         if sessions.is_empty() && self.writable {
-            self.create_session(&i18n::t("New session"))?;
+            self.create_session(Some(&i18n::t("New session")))?;
             sessions = self.list_sessions();
         }
         let model = self.model_status();

@@ -8,7 +8,7 @@ use tokio_util::sync::CancellationToken;
 
 use phi_contracts::SLOT_RUNTIME_SKELETON;
 use phi_contracts::ports::{
-    AssembledContext, ModelRequest, PolicyEffect, PolicyInput, RunStatus, RuntimePort, SessionPort,
+    AssembledContext, ModelRequest, PolicyEffect, PolicyInput, RunStatus, RuntimePort,
     StartRunRequest, ToolCall, ToolContext,
 };
 use phi_contracts::util::{
@@ -150,7 +150,6 @@ impl RuntimePort for LoopPlugin {
         let ctx = RunContext {
             bus: self.bus.clone(),
             ids: self.ids.clone(),
-            log: self.log.clone(),
             blob: self.blob.clone(),
             services: self.services.clone(),
             running: self.running.clone(),
@@ -193,7 +192,6 @@ impl RuntimePort for LoopPlugin {
 struct RunContext {
     bus: Arc<EventBus>,
     ids: Arc<dyn IdPort>,
-    log: Arc<dyn LogPort>,
     blob: Arc<dyn BlobPort>,
     services: Arc<Services>,
     running: Arc<Mutex<HashMap<String, RunControl>>>,
@@ -747,7 +745,6 @@ async fn run_inner(ctx: &RunContext) -> RunOutcome {
             }
             let outcome = execute_tool(
                 ctx,
-                &session,
                 &step_id,
                 ToolCall {
                     id: call_id,
@@ -847,12 +844,7 @@ struct ToolExecOutcome {
     unknown_side_effect: bool,
 }
 
-async fn execute_tool(
-    ctx: &RunContext,
-    session: &Arc<dyn SessionPort>,
-    step_id: &str,
-    call: ToolCall,
-) -> ToolExecOutcome {
+async fn execute_tool(ctx: &RunContext, step_id: &str, call: ToolCall) -> ToolExecOutcome {
     let digest = action_digest_for(ctx, &call);
     // The request record must be durable before anything else happens; if the
     // journal is unwritable we must not proceed to a side effect.

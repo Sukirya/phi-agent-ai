@@ -9,7 +9,7 @@ use phi_domain::view::{MessageView, RunView, SessionSummary, SessionView};
 use phi_i18n as i18n;
 use phi_kernel::event_bus::{EventBus, EventRecord, EventSink};
 use phi_kernel::lifecycle::{Plugin, PluginContext};
-use phi_kernel::ports::{BlobPort, ClockPort, IdPort};
+use phi_kernel::ports::{BlobPort, IdPort};
 use phi_kernel::registry::Contribution;
 
 #[derive(Clone)]
@@ -83,7 +83,6 @@ struct Projection {
 pub struct SessionPlugin {
     bus: Arc<EventBus>,
     ids: Arc<dyn IdPort>,
-    clock: Arc<dyn ClockPort>,
     blob: Arc<dyn BlobPort>,
     node_id: String,
     state: RwLock<Projection>,
@@ -97,14 +96,12 @@ impl SessionPlugin {
     pub fn new(
         bus: Arc<EventBus>,
         ids: Arc<dyn IdPort>,
-        clock: Arc<dyn ClockPort>,
         blob: Arc<dyn BlobPort>,
         node_id: String,
     ) -> Self {
         Self {
             bus,
             ids,
-            clock,
             blob,
             node_id,
             state: RwLock::new(Projection::default()),
@@ -701,7 +698,6 @@ mod tests {
         let plugin = Arc::new(SessionPlugin::new(
             bus.clone(),
             Arc::new(UuidIds),
-            Arc::new(SystemClock::new()),
             Arc::new(FsBlobStore::new(dir.join("blobs"))),
             "node-test".to_string(),
         ));
@@ -757,7 +753,6 @@ mod tests {
         let plugin = Arc::new(SessionPlugin::new(
             bus.clone(),
             Arc::new(UuidIds),
-            Arc::new(SystemClock::new()),
             Arc::new(FsBlobStore::new(dir.join("blobs"))),
             "node-test".to_string(),
         ));
