@@ -223,6 +223,9 @@ mod tests {
         let sandbox = FsSandboxPlugin;
         assert!(sandbox.resolve_path(&ws, "../secret.txt").is_err());
         assert!(sandbox.resolve_path(&ws, "a/../../secret.txt").is_err());
+        // Drive letters only exist on Windows; on other systems this is an
+        // ordinary relative name that stays inside the workspace.
+        #[cfg(windows)]
         assert!(sandbox.resolve_path(&ws, "C:/Windows/win.ini").is_err());
     }
 
