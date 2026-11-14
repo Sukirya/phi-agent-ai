@@ -394,3 +394,373 @@ textarea:focus {
 .composer-actions .primary {
   padding: 6px 16px;
 }
+
+/* Workbench: the task pane beside the conversation */
+.main-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.conversation {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.workbench-pane {
+  flex: none;
+  width: clamp(340px, 46%, 720px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: #171a20;
+}
+
+.workbench-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.workbench-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workbench-empty {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 18px 4px;
+}
+
+.workbench-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.workbench-row {
+  display: flex;
+  align-items: center;
+}
+
+.workbench-row.wrap {
+  flex-wrap: wrap;
+}
+
+.gap-sm {
+  gap: 6px;
+}
+
+.gap-md {
+  gap: 12px;
+}
+
+.gap-lg {
+  gap: 20px;
+}
+
+.workbench-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns, 2), minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workbench-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.workbench-card-head {
+  padding: 10px 12px 0;
+}
+
+.workbench-card-title {
+  font-weight: 600;
+}
+
+.workbench-card-subtitle {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.workbench-card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workbench-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2px 0;
+  width: 100%;
+}
+
+.workbench-text {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.workbench-code-block {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #101216;
+  overflow: hidden;
+}
+
+.workbench-code-lang {
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.workbench-code {
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+  max-height: 320px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.workbench-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.workbench-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.workbench-table th,
+.workbench-table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.workbench-table th {
+  color: var(--muted);
+  font-weight: 600;
+  background: #191c22;
+}
+
+.workbench-table tr:last-child td {
+  border-bottom: none;
+}
+
+.workbench-keyvalue {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.workbench-keyvalue dt {
+  color: var(--muted);
+}
+
+.workbench-keyvalue dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.workbench-badge {
+  display: inline-block;
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.workbench-badge.tone-ok {
+  color: var(--ok);
+  border-color: #2f5b36;
+}
+
+.workbench-badge.tone-warn {
+  color: var(--warn);
+  border-color: #6c5320;
+}
+
+.workbench-badge.tone-error {
+  color: var(--danger);
+  border-color: #6c2f2f;
+}
+
+.workbench-badge.tone-info {
+  color: var(--accent);
+  border-color: #3a5f9e;
+}
+
+.workbench-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.workbench-progress-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.workbench-progress-value {
+  color: var(--text);
+}
+
+.workbench-progress-track {
+  height: 7px;
+  border-radius: 999px;
+  background: #232833;
+  overflow: hidden;
+}
+
+.workbench-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.workbench-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.workbench-chart svg {
+  width: 100%;
+  height: auto;
+  color: var(--muted);
+}
+
+.workbench-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.workbench-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.workbench-legend-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+.workbench-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workbench-form-submit {
+  align-self: flex-start;
+}
+
+.workbench-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.workbench-field-label {
+  color: var(--muted);
+}
+
+.workbench-field-hint {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.workbench-button {
+  align-self: flex-start;
+}
+
+.workbench-unsupported {
+  color: var(--danger);
+  font-size: 12px;
+  border: 1px dashed #6c2f2f;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+@media (max-width: 900px) {
+  .main-body.split {
+    flex-direction: column-reverse;
+  }
+
+  .workbench-pane {
+    width: 100%;
+    max-height: 48%;
+    border-left: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+.ui-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.msg.streaming .text::after {
+  content: "▍";
+  margin-left: 2px;
+  opacity: 0.6;
+  animation: phi-cursor 1s steps(2, start) infinite;
+}
+
+@keyframes phi-cursor {
+  to {
+    visibility: hidden;
+  }
+}

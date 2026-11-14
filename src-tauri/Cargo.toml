@@ -1,26 +1,37 @@
 [package]
 name = "phi-agent"
-version = "0.1.0"
+version.workspace = true
 description = "phi-agent: local-first, multi-device agent client"
-authors = ["phi-agent contributors"]
-license = "GPL-3.0-only"
-edition = "2024"
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-# The `_lib` suffix may seem redundant but it is necessary
-# to make the lib name unique and wouldn't conflict with the bin name.
-# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "phi_agent_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+[workspace]
+members = [
+    ".",
+    "crates/phi-kernel",
+    "crates/phi-i18n",
+    "crates/phi-domain",
+    "crates/phi-contracts",
+    "crates/phi-adapters",
+    "crates/phi-plugins",
+    "crates/phi-node",
+    "crates/phi-headless",
+]
+# `cargo build` / `cargo test` in this directory still build the desktop shell
+# only; CI selects headless crates with `--workspace --exclude phi-agent`.
+default-members = ["."]
+resolver = "3"
 
-[build-dependencies]
-tauri-build = { version = "2", features = [] }
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+authors = ["phi-agent contributors"]
 
-[dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+[workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 uuid = { version = "1", features = ["v4"] }
@@ -30,14 +41,32 @@ hex = "0.4"
 async-trait = "0.1"
 tokio = { version = "1", features = ["sync", "time", "process", "macros", "rt-multi-thread", "io-util"] }
 tokio-util = "0.7"
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
 
-# Android has no OpenSSL in the NDK, so cross-compilation uses rustls there.
-# Desktop keeps native-tls (Schannel on Windows, system TLS elsewhere).
-[target.'cfg(target_os = "android")'.dependencies]
-reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "phi_agent_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
 
-[target.'cfg(not(target_os = "android"))'.dependencies]
-reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls"] }
+[[bin]]
+name = "phi-agent"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { workspace = true }
+tauri-plugin-opener = { workspace = true }
+serde_json = { workspace = true }
+phi-kernel = { path = "crates/phi-kernel" }
+phi-contracts = { path = "crates/phi-contracts" }
+phi-domain = { path = "crates/phi-domain" }
+phi-i18n = { path = "crates/phi-i18n" }
+phi-node = { path = "crates/phi-node" }
 
 [profile.dev]
 # Debug builds become noticeably more responsive at a small compile-time cost.

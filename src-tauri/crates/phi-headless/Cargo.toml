@@ -1,0 +1,23 @@
+[package]
+name = "phi-headless"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "phi-headless"
+path = "src/main.rs"
+
+[dependencies]
+phi-kernel = { path = "../phi-kernel" }
+phi-domain = { path = "../phi-domain" }
+phi-contracts = { path = "../phi-contracts" }
+phi-adapters = { path = "../phi-adapters" }
+phi-node = { path = "../phi-node" }
+phi-i18n = { path = "../phi-i18n" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+uuid = { workspace = true }

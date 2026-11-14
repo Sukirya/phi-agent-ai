@@ -2718,19 +2718,114 @@ dependencies = [
 ]
 
 [[package]]
+name = "phi-adapters"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hex",
+ "phi-contracts",
+ "phi-i18n",
+ "phi-kernel",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "uuid",
+]
+
+[[package]]
 name = "phi-agent"
+version = "0.1.0"
+dependencies = [
+ "phi-contracts",
+ "phi-domain",
+ "phi-i18n",
+ "phi-kernel",
+ "phi-node",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+]
+
+[[package]]
+name = "phi-contracts"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "hex",
+ "phi-domain",
+ "phi-i18n",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "tokio-util",
+]
+
+[[package]]
+name = "phi-domain"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "phi-headless"
+version = "0.1.0"
+dependencies = [
+ "phi-adapters",
+ "phi-contracts",
+ "phi-domain",
+ "phi-i18n",
+ "phi-kernel",
+ "phi-node",
+ "serde",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "phi-i18n"
+version = "0.1.0"
+
+[[package]]
+name = "phi-kernel"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "phi-node"
+version = "0.1.0"
+dependencies = [
+ "phi-adapters",
+ "phi-contracts",
+ "phi-domain",
+ "phi-i18n",
+ "phi-kernel",
+ "phi-plugins",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "phi-plugins"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
- "hex",
+ "phi-adapters",
+ "phi-contracts",
+ "phi-domain",
+ "phi-i18n",
+ "phi-kernel",
  "reqwest",
  "serde",
  "serde_json",
- "sha2 0.11.1",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
  "tokio",
  "tokio-util",
  "uuid",
