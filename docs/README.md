@@ -1,7 +1,7 @@
 # phi-agent 设计文档集
 
 > 本地优先、多端协同的 Agent 客户端 —— 架构与设计文档
-> 版本：v0.1（草稿，持续迭代） · 最后更新：2026-11-08
+> 版本：v0.1（草稿，持续迭代） · 最后更新：2026-11-14
 
 ---
 
@@ -80,7 +80,8 @@ docs/
 │   ├── quality-attributes.md        # 质量属性与取舍
 │   └── evaluation.md                # 评测进 CI
 ├── 80-roadmap/
-│   └── evolution.md                 # MVP → v1 → 后续迭代（交付边界）
+│   ├── evolution.md                 # MVP → v1 → 后续迭代（交付边界）
+│   └── implementation-status.md     # 功能实现现状（以代码与测试为准）
 └── adr/                             # 架构决策记录（ADR）
     └── README.md                    # ADR 的写作门槛与索引
 ```
@@ -124,6 +125,7 @@ docs/
 | `70-quality/quality-attributes.md` | 🌿 | 质量属性场景与取舍 |
 | `70-quality/evaluation.md` | 🌿 | 评测进 CI |
 | `80-roadmap/evolution.md` | 🌿 | 交付边界与里程碑（MVP/v1/后续） |
+| `80-roadmap/implementation-status.md` | 🌿 | 功能实现现状、缺口与优先级（以代码与测试为准） |
 | `adr/0001`–`adr/0011` | 🌳 | 十一条关键决策（已接受） |
 
 ---

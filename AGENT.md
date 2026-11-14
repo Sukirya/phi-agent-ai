@@ -39,6 +39,13 @@ easy to violate by accident.
    architecture, plugin/slot/kernel internals, headless CLI usage, wire
    protocols, environment variables, data paths, exit codes or CI details in
    the READMEs; those belong here or in `docs/`.
+6. **Supplemental material gets its own file in `docs/`.** Functional status,
+   implementation notes and design supplements go into a **new file** under
+   the matching numbered `docs/` folder, and get an entry in
+   `docs/README.md`. Do not grow this file or the READMEs with running
+   inventories; keep them pointing at the docs. The current feature status
+   lives in `docs/80-roadmap/implementation-status.md` and must be updated
+   when behavior changes.
 
 ## Layout
 
