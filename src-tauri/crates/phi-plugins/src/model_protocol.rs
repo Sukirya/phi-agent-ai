@@ -82,7 +82,14 @@ pub fn endpoint_url(profile: &ProviderProfile) -> String {
 }
 
 pub fn models_url(profile: &ProviderProfile) -> String {
-    let base = profile.base_url.trim_end_matches('/');
+    let mut base = profile.base_url.trim_end_matches('/');
+    // A profile may point at a full endpoint; the model list lives beside it.
+    for suffix in ["/chat/completions", "/responses", "/messages"] {
+        if let Some(rest) = base.strip_suffix(suffix) {
+            base = rest.trim_end_matches('/');
+            break;
+        }
+    }
     if base.ends_with("/v1/models") {
         base.to_string()
     } else if base.ends_with("/v1") {
@@ -1089,7 +1096,7 @@ impl StreamDecoder for ResponsesDecoder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use phi_contracts::provider::{AuthMode, Pricing};
+    use phi_contracts::provider::Pricing;
     use std::collections::HashMap;
 
     fn profile(protocol: Protocol) -> ProviderProfile {
@@ -1151,7 +1158,7 @@ mod tests {
             call_id: "call".into(),
             run_id: "run".into(),
             stream: true,
-            ui: false,
+            workbench: false,
         }
     }
 

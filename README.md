@@ -64,9 +64,9 @@ phi-agent works with Anthropic-compatible model endpoints. Enter your API key in
 
 No key? A built-in demo model takes over, so you can try the full tool-and-approval flow offline.
 
-## Intelligent UI
+## A workbench, not a chat window
 
-Tick **Intelligent UI** in the composer and the model answers with an interactive interface instead of prose — cards, charts, forms, tables, and other components rendered directly in the conversation. It is a different way to read an answer, not a different agent: approvals and tool calls work the same way.
+The main surface is a task workbench. When a visual layout helps, the agent lays out the workbench beside the conversation — plans, tables, charts, forms and buttons you can act on directly. Clicking a button or submitting a form sends that instruction back to the same agent, so the task keeps moving instead of restarting. Tick **Workbench** in the composer to let the agent shape the workbench for the next run. Approvals and tool calls work exactly the same way.
 
 ## Quick start
 

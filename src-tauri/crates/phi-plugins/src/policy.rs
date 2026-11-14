@@ -117,6 +117,10 @@ impl PolicyPort for DefaultPolicyPlugin {
                     ),
                 }
             }
+            "ui_update" => PolicyDecision {
+                effect: PolicyEffect::Allow,
+                rationale: i18n::t("Workbench views are declarative data and cannot execute code"),
+            },
             other => PolicyDecision {
                 effect: PolicyEffect::Deny,
                 rationale: i18n::t_args(

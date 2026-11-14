@@ -43,14 +43,14 @@ pub async fn send_message(
     session_id: String,
     text: String,
     provider_id: Option<String>,
-    ui: Option<bool>,
+    workbench: Option<bool>,
 ) -> Result<SendResult, String> {
     let run_id = state.0.send_message_full(
         &session_id,
         &text,
         provider_id.as_deref(),
         Default::default(),
-        ui.unwrap_or(false),
+        workbench.unwrap_or(false),
     )?;
     Ok(SendResult { run_id })
 }

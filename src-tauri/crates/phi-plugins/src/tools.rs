@@ -12,21 +12,25 @@ use phi_contracts::ports::{
     SandboxPort, SideEffect, ToolCall, ToolContext, ToolDefinition, ToolOutput, ToolPort,
 };
 use phi_contracts::util::truncate_chars;
+use phi_domain::events::DomainEvent;
 use phi_i18n as i18n;
+use phi_kernel::event_bus::EventBus;
 use phi_kernel::lifecycle::{Plugin, PluginContext};
 use phi_kernel::registry::Contribution;
 
 pub struct BuiltinToolsPlugin {
     sandbox: Arc<dyn SandboxPort>,
     backup_dir: PathBuf,
+    bus: Arc<EventBus>,
 }
 
 impl BuiltinToolsPlugin {
-    pub fn new(sandbox: Arc<dyn SandboxPort>, backup_dir: PathBuf) -> Self {
+    pub fn new(sandbox: Arc<dyn SandboxPort>, backup_dir: PathBuf, bus: Arc<EventBus>) -> Self {
         let _ = fs::create_dir_all(&backup_dir);
         Self {
             sandbox,
             backup_dir,
+            bus,
         }
     }
 }
@@ -112,6 +116,19 @@ impl ToolPort for BuiltinToolsPlugin {
                 }),
                 vec!["command"],
                 SideEffect::Irreversible,
+            ),
+            tool(
+                "ui_update",
+                "ui_update",
+                "Replace the workbench view shown beside the conversation. The view is a declarative JSON tree (version 1); it cannot run code. Use it to present the task state with cards, tables, charts, forms and actions.",
+                json!({
+                    "view": {
+                        "type": "object",
+                        "description": "View tree: { version: 1, title?: string, root: { kind, props?, children? } }"
+                    }
+                }),
+                vec!["view"],
+                SideEffect::None,
             ),
         ]
     }
@@ -202,6 +219,40 @@ impl ToolPort for BuiltinToolsPlugin {
                         is_error: true,
                     }),
                 };
+            }
+            "ui_update" => {
+                let view = call
+                    .input
+                    .get("view")
+                    .ok_or_else(|| i18n::t("Missing view argument"))?;
+                if let Err(error) = phi_contracts::ui::validate_view(view) {
+                    return Ok(ToolOutput {
+                        content: i18n::t_args(
+                            "Invalid workbench view: {error}",
+                            &[("error", error)],
+                        ),
+                        is_error: true,
+                    });
+                }
+                self.bus
+                    .publish(
+                        &ctx.session_id,
+                        "plugin-tools",
+                        &DomainEvent::UiViewUpdated {
+                            run_id: ctx.run_id.clone(),
+                            view: view.clone(),
+                        },
+                    )
+                    .map_err(|error| {
+                        i18n::t_args(
+                            "Failed to record the workbench view: {error}",
+                            &[("error", error)],
+                        )
+                    })?;
+                return Ok(ToolOutput {
+                    content: i18n::t("Workbench view updated."),
+                    is_error: false,
+                });
             }
             other => {
                 return Ok(ToolOutput {

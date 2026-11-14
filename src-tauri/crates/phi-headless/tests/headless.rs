@@ -78,35 +78,19 @@ fn last_json(stdout: &[u8]) -> Value {
     serde_json::from_str(line).unwrap_or_else(|error| panic!("bad JSON {line}: {error}"))
 }
 
-fn assistant_text(session: &Value) -> String {
-    session["session"]["messages"]
-        .as_array()
-        .map(|messages| {
-            messages
-                .iter()
-                .filter(|message| message["role"] == "assistant")
-                .flat_map(|message| message["blocks"].as_array().cloned().unwrap_or_default())
-                .filter(|block| block["type"] == "text")
-                .filter_map(|block| block["text"].as_str().map(str::to_string))
-                .collect::<Vec<_>>()
-                .join("\n")
-        })
-        .unwrap_or_default()
-}
-
 #[test]
-fn intelligent_ui_run_returns_openui_lang() {
-    let env = TestEnv::new("ui");
-    let result = env.run("show me a small dashboard", &["--ui"]);
+fn workbench_run_updates_the_session_view() {
+    let env = TestEnv::new("workbench");
+    let result = env.run("show me a small dashboard", &["--workbench"]);
     assert_eq!(result["run"]["state"], "Succeeded");
-    assert_eq!(result["run"]["uiMode"], json!(true));
+    assert_eq!(result["run"]["workbenchMode"], json!(true));
 
     let session = env.show(result["sessionId"].as_str().unwrap());
-    let text = assistant_text(&session);
-    assert!(
-        text.contains("root = Card("),
-        "expected an OpenUI program, got: {text}"
-    );
+    let view = &session["session"]["uiView"];
+    assert_eq!(view["version"], json!(1));
+    assert_eq!(view["root"]["kind"], "stack");
+    // The mock model's view is a full tree, not an opaque program string.
+    assert!(view["root"]["children"].as_array().unwrap().len() >= 2);
 }
 
 #[test]

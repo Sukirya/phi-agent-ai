@@ -36,8 +36,8 @@ pub struct RunView {
     pub cost_usd: f64,
     pub max_cost_usd: f64,
     pub max_wall_secs: u64,
-    /// True when the assistant answer is OpenUI Lang for the intelligent UI.
-    pub ui_mode: bool,
+    /// True when the agent may shape the workbench view for this run.
+    pub workbench_mode: bool,
     pub input_tokens: u64,
     pub output_tokens: u64,
     pub pending_approval_id: Option<String>,
@@ -57,6 +57,9 @@ pub struct SessionView {
     pub updated_at: String,
     pub messages: Vec<MessageView>,
     pub runs: Vec<RunView>,
+    /// Latest workbench view tree for this session, if the agent has set one.
+    #[serde(default)]
+    pub ui_view: Option<Value>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

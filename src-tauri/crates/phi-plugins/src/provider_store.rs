@@ -214,6 +214,11 @@ impl ProviderStore {
         }
         if let Some(api_key) = input.api_key.as_deref() {
             profile.api_key = SecretRef::normalize(api_key);
+            if profile.api_key.is_none() && input.auth.is_none() {
+                // Clearing the credential also drops the requirement for one;
+                // an explicit auth mode in the same input still wins below.
+                profile.auth = Some(AuthMode::None);
+            }
         }
         if let Some(headers) = input.headers {
             validate_headers(&headers)?;

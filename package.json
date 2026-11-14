@@ -8,21 +8,18 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "tauri": "tauri",
-    "generate:openui": "node scripts/generate-openui-prompt.mjs"
+    "tauri": "tauri"
   },
   "license": "GPL-3.0-only",
   "dependencies": {
     "solid-js": "^1",
     "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-opener": "^2",
-    "@openuidev/browser-bundle": "^0.2.2"
+    "@tauri-apps/plugin-opener": "^2"
   },
   "devDependencies": {
     "typescript": "^7",
     "vite": "^8",
     "vite-plugin-solid": "^2",
-    "@tauri-apps/cli": "^2",
-    "@openuidev/react-ui": "^0.18.6"
+    "@tauri-apps/cli": "^2"
   }
 }

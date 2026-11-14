@@ -100,8 +100,8 @@ pub struct ModelRequest {
     /// Whether the shell can consume incremental output. The gateway only
     /// streams when a sink is registered.
     pub stream: bool,
-    /// Ask for an OpenUI Lang answer rendered as an interactive interface.
-    pub ui: bool,
+    /// Whether the agent may shape the workbench view for this run.
+    pub workbench: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -270,8 +270,8 @@ pub struct StartRunRequest {
     pub turn_id: String,
     pub workspace: PathBuf,
     pub limits: RunLimits,
-    /// Render the answer as OpenUI Lang instead of a coding response.
-    pub ui: bool,
+    /// Let the agent shape the workbench view for this run.
+    pub workbench: bool,
 }
 
 /// Per-run hard caps. `None` falls back to the environment defaults, so a

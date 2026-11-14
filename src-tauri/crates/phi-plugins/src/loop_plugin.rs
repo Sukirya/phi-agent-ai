@@ -122,7 +122,7 @@ impl RuntimePort for LoopPlugin {
                 max_steps,
                 max_cost_usd,
                 max_wall_secs,
-                ui: req.ui,
+                workbench: req.workbench,
             },
         )?;
 
@@ -162,7 +162,7 @@ impl RuntimePort for LoopPlugin {
             status,
             max_steps,
             max_cost_usd,
-            ui_mode: req.ui,
+            workbench_mode: req.workbench,
         };
         tokio::spawn(run_loop(ctx));
         Ok(run_id)
@@ -205,12 +205,11 @@ struct RunContext {
     status: Arc<Mutex<RunStatus>>,
     max_steps: u64,
     max_cost_usd: f64,
-    ui_mode: bool,
+    workbench_mode: bool,
 }
 
-/// Generated from the built-in OpenUI chat library. Regenerate with
-/// `bun run generate:openui` after upgrading the OpenUI packages.
-const OPENUI_SYSTEM_PROMPT: &str = include_str!("../../../assets/openui-chat-system-prompt.txt");
+/// Appended to the normal system prompt when the run may shape the workbench.
+const WORKBENCH_PROMPT: &str = include_str!("../../../assets/workbench-system-prompt.txt");
 
 enum RunOutcome {
     Succeeded,
@@ -329,11 +328,11 @@ async fn run_inner(ctx: &RunContext) -> RunOutcome {
     );
 
     let mut ledger = Ledger::new(ctx.max_cost_usd);
-    let tools = if ctx.ui_mode {
-        Vec::new()
-    } else {
-        ctx.services.tool_definitions()
-    };
+    let mut tools = ctx.services.tool_definitions();
+    if !ctx.workbench_mode {
+        // The UI tool is noise for plain chat runs; keep the prompt focused.
+        tools.retain(|tool| tool.id != "ui_update");
+    }
     let max_output_tokens = env_u64("PHI_MAX_OUTPUT_TOKENS", 4096) as u32;
 
     for step_index in 1..=ctx.max_steps {
@@ -365,8 +364,8 @@ async fn run_inner(ctx: &RunContext) -> RunOutcome {
             Some(assembler) => assembler.assemble(history, &ctx.workspace),
             None => fallback_context(history, &ctx.workspace),
         };
-        if ctx.ui_mode {
-            assembled.system = OPENUI_SYSTEM_PROMPT.trim().to_string();
+        if ctx.workbench_mode {
+            assembled.system = format!("{}\n\n{}", assembled.system, WORKBENCH_PROMPT);
         }
 
         let step_id = ctx.ids.new_id("step");
@@ -472,7 +471,7 @@ async fn run_inner(ctx: &RunContext) -> RunOutcome {
                 call_id: call_id.clone(),
                 run_id: ctx.run_id.clone(),
                 stream: env_bool("PHI_STREAM", true),
-                ui: ctx.ui_mode,
+                workbench: ctx.workbench_mode,
             };
 
             // The unified deadline applies to the model request too.

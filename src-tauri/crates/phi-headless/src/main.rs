@@ -60,7 +60,7 @@ struct RunArgs {
     stream: bool,
     title: Option<String>,
     limits: RunLimits,
-    ui: bool,
+    workbench: bool,
 }
 
 enum Command {
@@ -316,7 +316,7 @@ async fn run(global: GlobalOptions, args: RunArgs) -> Result<i32, String> {
         session_id.clone(),
         args.approval,
     ));
-    let run_id = node.send_message_full(&session_id, &message, None, args.limits, args.ui);
+    let run_id = node.send_message_full(&session_id, &message, None, args.limits, args.workbench);
     let run_id = match run_id {
         Ok(run_id) => run_id,
         Err(error) => {
@@ -573,7 +573,7 @@ fn parse_run(rest: &[String]) -> Result<RunArgs, String> {
         stream: true,
         title: None,
         limits: RunLimits::default(),
-        ui: false,
+        workbench: false,
     };
     let mut index = 0;
     while index < rest.len() {
@@ -628,8 +628,8 @@ fn parse_run(rest: &[String]) -> Result<RunArgs, String> {
                     args.stream = true;
                     index += 1;
                 }
-                "--ui" => {
-                    args.ui = true;
+                "--workbench" => {
+                    args.workbench = true;
                     index += 1;
                 }
                 other => {
@@ -882,7 +882,7 @@ Usage:
 Commands:
   run --message TEXT [--session ID] [--provider ID]
       [--approval deny|allow|prompt] [--no-stream] [--title TEXT]
-      [--max-steps N] [--max-cost USD] [--max-wall SECS] [--ui]
+      [--max-steps N] [--max-cost USD] [--max-wall SECS] [--workbench]
   sessions list
   sessions show <id>
   approve <id> --allow|--deny [--note TEXT]

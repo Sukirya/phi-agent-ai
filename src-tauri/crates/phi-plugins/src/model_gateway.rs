@@ -257,35 +257,6 @@ impl ModelGateway {
     /// Deterministic local provider so the loop, policy and tools can be
     /// exercised without an API key.
     fn mock_invoke(&self, req: &ModelRequest) -> Result<ModelResponse, ModelError> {
-        if req.ui {
-            let text = "\
-root = Card([header, intro, chart, note])
-header = CardHeader(\"Intelligent UI\", \"A mock OpenUI answer rendered locally\")
-intro = TextContent(\"Configure a model provider to get real generative UI. The layout below is produced by OpenUI Lang and rendered by the OpenUI chat library.\")
-chart = BarChart([\"Mon\", \"Tue\", \"Wed\", \"Thu\", \"Fri\"], [calls], \"grouped\", \"Day\", \"Calls\")
-calls = Series(\"Calls\", [4, 7, 5, 9, 6])
-note = Callout(\"info\", \"Mock model\", \"This deterministic response exists so the UI path is testable without a provider.\")
-";
-            if req.stream && self.streams.is_enabled() {
-                self.publish_delta(
-                    req,
-                    StreamDelta::Text {
-                        index: 0,
-                        text: text.to_string(),
-                    },
-                );
-                self.publish_delta(req, StreamDelta::Done);
-            }
-            return Ok(ModelResponse {
-                blocks: vec![ContentBlock::text(text)],
-                input_tokens: 0,
-                output_tokens: 0,
-                cost_usd: 0.0,
-                finish_reason: "end_turn".to_string(),
-                estimated_usage: false,
-            });
-        }
-
         let mut tool_results = Vec::new();
         let mut last_user_text = String::new();
         for message in &req.messages {
@@ -307,6 +278,20 @@ note = Callout(\"info\", \"Mock model\", \"This deterministic response exists so
                     &[("summary", truncate(result, 1200))],
                 ))],
                 "end_turn",
+            )
+        } else if req.workbench {
+            (
+                vec![
+                    ContentBlock::text(i18n::t(
+                        "(Mock model; no provider configured) I will build a workbench view for this task.",
+                    )),
+                    ContentBlock::ToolUse {
+                        id: format!("call_{}", uuid::Uuid::new_v4().simple()),
+                        name: "ui_update".to_string(),
+                        input: json!({ "view": mock_workbench_view() }),
+                    },
+                ],
+                "tool_use",
             )
         } else {
             let lowercase = last_user_text.to_lowercase();
@@ -484,6 +469,70 @@ note = Callout(\"info\", \"Mock model\", \"This deterministic response exists so
             },
         }
     }
+}
+
+/// A small but complete view tree, so the workbench path is exercised without
+/// a provider: layout, card, text, progress, badge, button and table.
+fn mock_workbench_view() -> Value {
+    json!({
+        "version": 1,
+        "title": i18n::t("Workbench"),
+        "root": {
+            "kind": "stack",
+            "props": { "gap": "md" },
+            "children": [
+                {
+                    "kind": "card",
+                    "props": {
+                        "title": i18n::t("Task overview"),
+                        "subtitle": i18n::t("Mock workbench")
+                    },
+                    "children": [
+                        {
+                            "kind": "text",
+                            "props": {
+                                "text": i18n::t("This view is plain data. The agent can replace it with tables, charts, forms and actions as the task progresses.")
+                            }
+                        },
+                        {
+                            "kind": "progress",
+                            "props": { "value": 40, "label": i18n::t("Example progress") }
+                        },
+                        {
+                            "kind": "row",
+                            "props": { "gap": "sm" },
+                            "children": [
+                                { "kind": "badge", "props": { "text": i18n::t("offline"), "tone": "neutral" } },
+                                {
+                                    "kind": "button",
+                                    "props": {
+                                        "label": i18n::t("Inspect workspace"),
+                                        "action": {
+                                            "kind": "message",
+                                            "text": i18n::t("List the workspace and summarize it.")
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "kind": "card",
+                    "props": { "title": i18n::t("Recent tool calls") },
+                    "children": [
+                        {
+                            "kind": "table",
+                            "props": {
+                                "columns": [i18n::t("Step"), i18n::t("Status")],
+                                "rows": [["1", i18n::t("ok")], ["2", i18n::t("pending")]]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    })
 }
 
 impl Plugin for ModelGateway {
@@ -692,7 +741,7 @@ mod tests {
             call_id: "call".into(),
             run_id: "run".into(),
             stream: false,
-            ui: false,
+            workbench: false,
         };
         let response = gateway.invoke(req, CancellationToken::new()).await.unwrap();
         assert!(

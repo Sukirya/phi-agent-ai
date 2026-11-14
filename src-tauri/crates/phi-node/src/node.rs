@@ -214,6 +214,7 @@ pub fn compose(config: NodeConfig) -> Result<Arc<Node>, String> {
     let tools = Arc::new(BuiltinToolsPlugin::new(
         sandbox.clone(),
         config.data_dir.join("backups"),
+        bus.clone(),
     ));
     let context = Arc::new(DefaultContextPlugin::new(sandbox.clone()));
 
@@ -548,7 +549,7 @@ impl Node {
         text: &str,
         provider_id: Option<&str>,
         limits: RunLimits,
-        ui: bool,
+        workbench: bool,
     ) -> Result<String, String> {
         self.require_writable()?;
         if self.kernel.mode() != RunMode::Normal {
@@ -599,7 +600,7 @@ impl Node {
             turn_id: turn.turn_id,
             workspace,
             limits,
-            ui,
+            workbench,
         })
     }
 

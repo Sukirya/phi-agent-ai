@@ -142,6 +142,33 @@ fn zh(msgid: &str) -> Option<&'static str> {
         "Write failed: {error}" => "写入失败: {error}",
         "Wrote {path} ({bytes} bytes). {note}" => "已写入 {path}（{bytes} 字节）。{note}",
 
+        // Workbench view
+        "Workbench" => "工作台",
+        "Task overview" => "任务总览",
+        "Mock workbench" => "演示工作台",
+        "This view is plain data. The agent can replace it with tables, charts, forms and actions as the task progresses." => {
+            "这个视图只是纯数据。随着任务推进，Agent 可以把它替换为表格、图表、表单和操作按钮。"
+        }
+        "Example progress" => "示例进度",
+        "offline" => "离线",
+        "Inspect workspace" => "检查工作区",
+        "List the workspace and summarize it." => "列出工作区内容并做总结。",
+        "Recent tool calls" => "最近的工具调用",
+        "Step" => "步骤",
+        "Status" => "状态",
+        "ok" => "正常",
+        "pending" => "等待中",
+        "(Mock model; no provider configured) I will build a workbench view for this task." => {
+            "（Mock 模型；未配置模型服务）我会为这个任务布置一个工作台视图。"
+        }
+        "Missing view argument" => "缺少 view 参数",
+        "Invalid workbench view: {error}" => "工作台视图无效：{error}",
+        "Failed to record the workbench view: {error}" => "记录工作台视图失败：{error}",
+        "Workbench view updated." => "工作台视图已更新。",
+        "Workbench views are declarative data and cannot execute code" => {
+            "工作台视图是声明式数据，不能执行代码"
+        }
+
         // Session
         "The process restarted while an approval was pending; the action was not executed. Review it and send the request again." => {
             "进程重启前正在等待审批，动作尚未执行。请核对后重新发起。"

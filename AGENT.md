@@ -98,15 +98,20 @@ Three wire protocols are supported: `anthropic_messages`, `openai_chat` and
 `openai_responses`, each with SSE streaming. Streaming deltas are transient and
 go to the shell sink; only the final assistant message is journaled.
 
-## Intelligent UI
+## Workbench view
 
-The desktop UI can render OpenUI Lang (the generative-UI format used by
-[open-intelligent-ui](https://github.com/thesysdev/open-intelligent-ui)) through
-`@openuidev/browser-bundle`, which provides the React renderer and the built-in
-OpenUI chat component library. UI runs use a dedicated system prompt
-(`src-tauri/assets/openui-chat-system-prompt.txt`); the model's entire answer is
-OpenUI Lang. Keep the prompt regenerated with `bun run generate:openui` when
-the library version changes.
+The main surface is a task workbench, not a chat log. In workbench mode the
+agent can call the `ui_update` tool to replace the view tree rendered beside the
+conversation. Views are declarative JSON data (`src-tauri/crates/phi-contracts/
+src/ui.rs`, version 1): layout, content and action kinds are allowlisted and the
+node validates every tree before it becomes a `UiViewUpdated` event. The shell
+renders the tree with a Solid component registry (`src/workbench/`); it never
+evaluates model-authored code. Buttons and forms can only submit a message or
+open an http(s) URL.
+
+The protocol prompt lives in `src-tauri/assets/workbench-system-prompt.txt` and
+is appended to the normal system prompt only for workbench runs. Plain chat runs
+do not receive the tool or the prompt.
 
 ## Tests and CI
 

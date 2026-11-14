@@ -1,10 +1,11 @@
 import { For, Show, createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { OpenUIBlock } from "./OpenUIBlock";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { lang, setLang, t, tArgs } from "./i18n";
+import { ViewRenderer } from "./workbench/ViewRenderer";
+import type { ViewAction, WorkbenchView } from "./workbench/types";
 import "./App.css";
-import "@openuidev/browser-bundle/styles.css";
 
 type ModelStatus = { provider: string; model: string; configured: boolean };
 type SessionSummary = {
@@ -36,7 +37,7 @@ type Run = {
   costUsd: number;
   maxCostUsd: number;
   maxWallSecs: number;
-  uiMode: boolean;
+  workbenchMode: boolean;
   inputTokens: number;
   outputTokens: number;
   pendingApprovalId: string | null;
@@ -53,6 +54,7 @@ type SessionView = {
   updatedAt: string;
   messages: Message[];
   runs: Run[];
+  uiView: WorkbenchView | null;
 };
 type PendingApproval = {
   id: string;
@@ -139,7 +141,7 @@ function App() {
   const [input, setInput] = createSignal("");
   const [workspaceInput, setWorkspaceInput] = createSignal("");
   const [apiKey, setApiKey] = createSignal("");
-  const [uiMode, setUiMode] = createSignal(false);
+  const [workbenchMode, setWorkbenchMode] = createSignal(false);
   const [error, setError] = createSignal("");
   const [streamText, setStreamText] = createSignal("");
   const [streamRunId, setStreamRunId] = createSignal<string | null>(null);
@@ -224,26 +226,42 @@ function App() {
     }
   });
 
-  async function send() {
-    const text = input().trim();
+  async function sendText(text: string, fromComposer: boolean) {
     const id = currentId();
     if (!text || !id) return;
     setError("");
-    setInput("");
+    if (fromComposer) setInput("");
     setStreamText("");
     setStreamRunId(null);
     try {
       const result = await invoke<SendResult>("send_message", {
         sessionId: id,
         text,
-        ui: uiMode(),
+        workbench: workbenchMode(),
       });
       setStreamRunId(result.runId);
     } catch (e) {
       setError(errorText(e));
-      setInput(text);
+      if (fromComposer) setInput(text);
     }
     scheduleRefresh();
+  }
+
+  function send() {
+    const text = input().trim();
+    if (text) void sendText(text, true);
+  }
+
+  async function handleViewAction(action: ViewAction) {
+    if (action.kind === "message") {
+      await sendText(action.text, false);
+      return;
+    }
+    try {
+      await openUrl(action.url);
+    } catch (e) {
+      setError(errorText(e));
+    }
   }
 
   async function resolveApproval(approvalId: string, approved: boolean) {
@@ -323,15 +341,8 @@ function App() {
     return state === "Scheduled" || state === "Running" || state === "WaitingApproval";
   };
   const modeOk = () => boot()?.mode === "Normal";
-  const uiRun = (message: Message) =>
-    detail()?.session.runs.find(
-      (run) => run.turnId === message.turnId && run.uiMode,
-    ) ?? null;
-  const assistantText = (message: Message) =>
-    message.blocks
-      .filter((block): block is Extract<Block, { type: "text" }> => block.type === "text")
-      .map((block) => block.text)
-      .join("\n");
+  const uiView = () => detail()?.session.uiView ?? null;
+  const showWorkbench = () => !!uiView() || workbenchMode();
 
   return (
     <div class="app">
@@ -413,158 +424,191 @@ function App() {
           <div class="banner error">{error()}</div>
         </Show>
 
-        <section class="transcript" ref={(el) => (transcriptRef = el)}>
-          <Show when={detail()} fallback={<div class="empty">{t("Loading…")}</div>}>
-            {(d) => (
-              <>
-                <Show when={d().session.messages.length === 0}>
-                  <div class="empty">
-                    <p>{t("Describe a task for the coding agent, for example:")}</p>
-                    <p class="hint">
-                      {t("“Look at the repository structure, then fix the failing test.”")}
-                    </p>
-                    <Show when={!boot()?.model.configured}>
-                      <p class="hint">
-                        {t(
-                          "No model key is configured, so runs use the mock model (it demonstrates the tool loop). Set a key in the top right.",
-                        )}
-                      </p>
-                    </Show>
-                  </div>
-                </Show>
-                <For each={d().session.messages}>
-                  {(message) => (
-                    <div class={`msg ${message.role}`}>
-                      <div class="msg-role">
-                        {message.role === "user" ? t("You") : t("Agent")}
+        <div classList={{ "main-body": true, split: showWorkbench() }}>
+          <section class="conversation">
+            <section class="transcript" ref={(el) => (transcriptRef = el)}>
+              <Show when={detail()} fallback={<div class="empty">{t("Loading…")}</div>}>
+                {(d) => (
+                  <>
+                    <Show when={d().session.messages.length === 0}>
+                      <div class="empty">
+                        <p>{t("Describe a task for the coding agent, for example:")}</p>
+                        <p class="hint">
+                          {t("“Look at the repository structure, then fix the failing test.”")}
+                        </p>
+                        <Show when={!boot()?.model.configured}>
+                          <p class="hint">
+                            {t(
+                              "No model key is configured, so runs use the mock model (it demonstrates the tool loop). Set a key in the top right.",
+                            )}
+                          </p>
+                        </Show>
                       </div>
-                      <div class="msg-body">
-                        <Show
-                          when={message.role === "assistant" ? uiRun(message) : null}
-                          fallback={
+                    </Show>
+                    <For each={d().session.messages}>
+                      {(message) => (
+                        <div class={`msg ${message.role}`}>
+                          <div class="msg-role">
+                            {message.role === "user" ? t("You") : t("Agent")}
+                          </div>
+                          <div class="msg-body">
                             <For each={message.blocks}>
                               {(block) => <BlockView block={block} />}
                             </For>
-                          }
-                        >
-                          <OpenUIBlock code={assistantText(message)} />
-                        </Show>
-                      </div>
-                    </div>
-                  )}
-                </For>
+                          </div>
+                        </div>
+                      )}
+                    </For>
 
-                <Show when={streamText()}>
-                  <div class="msg assistant streaming">
-                    <div class="msg-role">{t("Agent")}</div>
-                    <div class="msg-body">
-                      <div class="text">{streamText()}</div>
-                    </div>
-                  </div>
-                </Show>
+                    <Show when={streamText()}>
+                      <div class="msg assistant streaming">
+                        <div class="msg-role">{t("Agent")}</div>
+                        <div class="msg-body">
+                          <div class="text">{streamText()}</div>
+                        </div>
+                      </div>
+                    </Show>
 
-                <For each={d().pendingApprovals}>
-                  {(approval) => (
-                    <div class="approval">
-                      <div class="approval-title">
-                        {tArgs("⚠ Approval required: {tool}", {
-                          tool: approval.toolId,
-                        })}
-                      </div>
-                      <div class="approval-risk">
-                        {tArgs("Risk: {risk}", { risk: approval.risk })}
-                      </div>
-                      <pre>{JSON.stringify(approval.argsPreview, null, 2)}</pre>
-                      <div class="approval-actions">
-                        <button class="primary" onClick={() => resolveApproval(approval.id, true)}>
-                          {t("Approve")}
-                        </button>
-                        <button onClick={() => resolveApproval(approval.id, false)}>
-                          {t("Reject")}
-                        </button>
-                      </div>
-                      <div class="approval-foot">
-                        {tArgs("Action digest {digest}… · expires {expires}", {
-                          digest: approval.actionDigest.slice(0, 16),
-                          expires: approval.expiresAt,
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </For>
-              </>
-            )}
-          </Show>
-        </section>
-
-        <Show when={currentRun()}>
-          {(run) => (
-            <div class="runbar">
-              <span classList={{ state: true, active: isRunning() }}>{stateLabel(run().state)}</span>
-              <span>
-                {tArgs("Steps {steps}/{max}", {
-                  steps: run().steps,
-                  max: run().maxSteps,
-                })}
-              </span>
-              <span>
-                ${run().costUsd.toFixed(4)} / ${run().maxCostUsd.toFixed(2)}
-              </span>
-              <span>
-                tokens {run().inputTokens + run().outputTokens}
-              </span>
-              <Show when={isRunning()}>
-                <button class="danger" onClick={() => cancelRun(run().id)}>
-                  {t("Cancel")}
-                </button>
+                    <For each={d().pendingApprovals}>
+                      {(approval) => (
+                        <div class="approval">
+                          <div class="approval-title">
+                            {tArgs("⚠ Approval required: {tool}", {
+                              tool: approval.toolId,
+                            })}
+                          </div>
+                          <div class="approval-risk">
+                            {tArgs("Risk: {risk}", { risk: approval.risk })}
+                          </div>
+                          <pre>{JSON.stringify(approval.argsPreview, null, 2)}</pre>
+                          <div class="approval-actions">
+                            <button class="primary" onClick={() => resolveApproval(approval.id, true)}>
+                              {t("Approve")}
+                            </button>
+                            <button onClick={() => resolveApproval(approval.id, false)}>
+                              {t("Reject")}
+                            </button>
+                          </div>
+                          <div class="approval-foot">
+                            {tArgs("Action digest {digest}… · expires {expires}", {
+                              digest: approval.actionDigest.slice(0, 16),
+                              expires: approval.expiresAt,
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </For>
+                  </>
+                )}
               </Show>
-            </div>
-          )}
-        </Show>
+            </section>
 
-        <Show
-          when={currentRun()?.state === "AwaitingReconciliation" || currentRun()?.state === "Failed" || currentRun()?.state === "Aborted"}
-        >
-          <div class="banner warn">
-            <div>{currentRun()?.error}</div>
-            <div>{currentRun()?.stopConfirmation}</div>
-          </div>
-        </Show>
+            <Show when={currentRun()}>
+              {(run) => (
+                <div class="runbar">
+                  <span classList={{ state: true, active: isRunning() }}>{stateLabel(run().state)}</span>
+                  <span>
+                    {tArgs("Steps {steps}/{max}", {
+                      steps: run().steps,
+                      max: run().maxSteps,
+                    })}
+                  </span>
+                  <span>
+                    ${run().costUsd.toFixed(4)} / ${run().maxCostUsd.toFixed(2)}
+                  </span>
+                  <span>
+                    tokens {run().inputTokens + run().outputTokens}
+                  </span>
+                  <Show when={isRunning()}>
+                    <button class="danger" onClick={() => cancelRun(run().id)}>
+                      {t("Cancel")}
+                    </button>
+                  </Show>
+                </div>
+              )}
+            </Show>
 
-        <footer class="composer">
-          <textarea
-            value={input()}
-            onInput={(e) => setInput(e.currentTarget.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            placeholder={t("Describe a task… (Enter to send, Shift+Enter for a newline)")}
-            disabled={!modeOk() || isRunning()}
-            rows={3}
-          />
-          <div class="composer-actions">
-            <label class="ui-toggle" title={t("UI mode: the model answers with an interactive OpenUI interface.")}>
-              <input
-                type="checkbox"
-                checked={uiMode()}
-                onChange={(e) => setUiMode(e.currentTarget.checked)}
+            <Show
+              when={currentRun()?.state === "AwaitingReconciliation" || currentRun()?.state === "Failed" || currentRun()?.state === "Aborted"}
+            >
+              <div class="banner warn">
+                <div>{currentRun()?.error}</div>
+                <div>{currentRun()?.stopConfirmation}</div>
+              </div>
+            </Show>
+
+            <footer class="composer">
+              <textarea
+                value={input()}
+                onInput={(e) => setInput(e.currentTarget.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+                placeholder={t("Describe a task… (Enter to send, Shift+Enter for a newline)")}
+                disabled={!modeOk() || isRunning()}
+                rows={3}
               />
-              {t("Intelligent UI")}
-            </label>
-            <span class="hint">
-              {tArgs("Budget: {steps} steps / ${cost}", {
-                steps: boot()?.maxSteps ?? 20,
-                cost: boot()?.maxCostUsd ?? 0.5,
-              })}
-            </span>
-            <button class="primary" onClick={send} disabled={!modeOk() || isRunning() || !input().trim()}>
-              {t("Send")}
-            </button>
-          </div>
-        </footer>
+              <div class="composer-actions">
+                <label
+                  class="ui-toggle"
+                  title={t(
+                    "Workbench mode: the agent also shapes the task workbench next to the conversation.",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={workbenchMode()}
+                    onChange={(e) => setWorkbenchMode(e.currentTarget.checked)}
+                  />
+                  {t("Workbench")}
+                </label>
+                <span class="hint">
+                  {tArgs("Budget: {steps} steps / ${cost}", {
+                    steps: boot()?.maxSteps ?? 20,
+                    cost: boot()?.maxCostUsd ?? 0.5,
+                  })}
+                </span>
+                <button class="primary" onClick={send} disabled={!modeOk() || isRunning() || !input().trim()}>
+                  {t("Send")}
+                </button>
+              </div>
+            </footer>
+          </section>
+
+          <Show when={showWorkbench()}>
+            <aside class="workbench-pane">
+              <header class="workbench-head">
+                <span class="workbench-title">
+                  {uiView()?.title || t("Workbench")}
+                </span>
+                <Show when={uiView()}>
+                  {(view) => (
+                    <span class="badge">
+                      {tArgs("View v{version}", { version: view().version })}
+                    </span>
+                  )}
+                </Show>
+              </header>
+              <div class="workbench-body">
+                <Show
+                  when={uiView()}
+                  fallback={
+                    <div class="workbench-empty">
+                      {t("The agent will lay out the task here when a visual overview helps.")}
+                    </div>
+                  }
+                >
+                  {(view) => (
+                    <ViewRenderer view={view()} onAction={handleViewAction} />
+                  )}
+                </Show>
+              </div>
+            </aside>
+          </Show>
+        </div>
       </main>
     </div>
   );

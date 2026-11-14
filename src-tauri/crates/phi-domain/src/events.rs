@@ -53,9 +53,9 @@ pub enum DomainEvent {
         max_steps: u64,
         max_cost_usd: f64,
         max_wall_secs: u64,
-        /// The answer is OpenUI Lang and should be rendered as a UI.
+        /// The agent may shape the workbench view for this run.
         #[serde(default)]
-        ui: bool,
+        workbench: bool,
     },
     RunStarted {
         run_id: String,
@@ -176,6 +176,14 @@ pub enum DomainEvent {
         invocation_id: String,
         run_id: String,
         evidence: String,
+    },
+
+    // ── workbench ─────────────────────────────────────────────────────
+    /// The latest view tree replaces the session's workbench. Views are data,
+    /// not code: the shell renders them with its own component registry.
+    UiViewUpdated {
+        run_id: String,
+        view: Value,
     },
 
     // ── approval ──────────────────────────────────────────────────────

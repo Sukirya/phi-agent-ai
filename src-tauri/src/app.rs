@@ -4,7 +4,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::tauri_sink::{TauriEventSink, TauriStreamSink};
 use phi_i18n as i18n;
-use phi_node::{Node, NodeConfig, compose};
+use phi_node::{Node, NodeConfig, compose as compose_node};
 
 pub struct AppStateHandle(pub Arc<Node>);
 
@@ -22,7 +22,7 @@ pub fn compose(app: AppHandle) -> Result<Arc<Node>, String> {
         .document_dir()
         .ok()
         .map(|documents| documents.join("phi-workspace"));
-    compose(NodeConfig {
+    compose_node(NodeConfig {
         data_dir,
         workspace: None,
         fallback_workspace,
