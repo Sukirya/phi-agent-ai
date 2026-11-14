@@ -39,13 +39,15 @@ easy to violate by accident.
    architecture, plugin/slot/kernel internals, headless CLI usage, wire
    protocols, environment variables, data paths, exit codes or CI details in
    the READMEs; those belong here or in `docs/`.
-6. **Supplemental material gets its own file in `docs/`.** Functional status,
-   implementation notes and design supplements go into a **new file** under
-   the matching numbered `docs/` folder, and get an entry in
-   `docs/README.md`. Do not grow this file or the READMEs with running
-   inventories; keep them pointing at the docs. The current feature status
-   lives in `docs/80-roadmap/implementation-status.md` and must be updated
-   when behavior changes.
+6. **Scope additions are recorded in `docs/`.** Anything we add that the
+   original design did not have — a UI surface, protocol, command or product
+   capability — goes into `docs/` as a written record: append a section to
+   `docs/80-roadmap/scope-additions.md`, or start a new numbered file when the
+   area is large enough to stand alone, and register new files in
+   `docs/README.md`. Removal or replacement is recorded too, with the reason
+   and the successor. Do not grow README or this file with those lists; keep
+   them pointing at the docs. The Intelligent UI experiment and its removal
+   live in `docs/80-roadmap/scope-additions.md`.
 
 ## Layout
 

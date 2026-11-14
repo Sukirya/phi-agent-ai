@@ -81,7 +81,7 @@ docs/
 │   └── evaluation.md                # 评测进 CI
 ├── 80-roadmap/
 │   ├── evolution.md                 # MVP → v1 → 后续迭代（交付边界）
-│   └── implementation-status.md     # 功能实现现状（以代码与测试为准）
+│   └── scope-additions.md           # 范围增补记录（原设计之外新增的能力）
 └── adr/                             # 架构决策记录（ADR）
     └── README.md                    # ADR 的写作门槛与索引
 ```
@@ -125,7 +125,7 @@ docs/
 | `70-quality/quality-attributes.md` | 🌿 | 质量属性场景与取舍 |
 | `70-quality/evaluation.md` | 🌿 | 评测进 CI |
 | `80-roadmap/evolution.md` | 🌿 | 交付边界与里程碑（MVP/v1/后续） |
-| `80-roadmap/implementation-status.md` | 🌿 | 功能实现现状、缺口与优先级（以代码与测试为准） |
+| `80-roadmap/scope-additions.md` | 🌿 | 范围增补记录（原设计之外新增/移除的能力与原因） |
 | `adr/0001`–`adr/0011` | 🌳 | 十一条关键决策（已接受） |
 
 ---
